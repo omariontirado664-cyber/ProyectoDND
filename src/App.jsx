@@ -5,6 +5,7 @@ import DashboardDND from './pages/dashboard';
 import Inventario from './pages/Inventario'; 
 import Usuarios from './pages/Usuarios'; // 1. Importación del nuevo componente
 import Sidebar from './components/Sidebar'; 
+import Proveedores from './pages/Proveedores';
 import { AuthProvider, useAuth } from './components/AuthContext'; 
 
 function AppContent() {
@@ -26,6 +27,8 @@ function AppContent() {
         return <Inventario />; 
       case 'users': // 3. Caso para el Censo Real
         return <Usuarios />;
+      case 'providers':
+        return <Proveedores></Proveedores>;
       default: 
         return <DashboardDND user={user} onLogout={logout} />;
     }
