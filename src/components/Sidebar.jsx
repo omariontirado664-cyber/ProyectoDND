@@ -4,6 +4,7 @@ import {
   GiDungeonGate, GiOpenBook, GiStoneTower, 
   GiChest, GiDeathSkull 
 } from 'react-icons/gi';
+import { FaUsers } from 'react-icons/fa'; // Importamos un icono seguro para el censo
 
 const SidebarIcon = ({ icon, active, onClick, label }) => (
   <motion.button 
@@ -22,10 +23,9 @@ const SidebarIcon = ({ icon, active, onClick, label }) => (
 
 const Sidebar = ({ activeTab, setActiveTab, onLogoutClick }) => {
   return (
-    /* CAMBIO: Eliminamos 'fixed', 'left-0', 'top-0'. Agregamos 'sticky' para que te siga al hacer scroll */
     <aside className="sticky top-0 h-screen w-28 flex-shrink-0 flex flex-col items-center py-10 z-[110]">
       
-      {/* Fondo de madera tallada (Ajustado para llenar el contenedor flex) */}
+      {/* Fondo de madera tallada */}
       <div className="absolute inset-y-0 left-0 w-full bg-[#2a1b0c] border-r-4 border-[#8b5e3c] shadow-[10px_0_30px_rgba(0,0,0,0.5)]"
            style={{ 
              backgroundImage: `url('https://www.transparenttextures.com/patterns/dark-wood.png')`, 
@@ -56,6 +56,13 @@ const Sidebar = ({ activeTab, setActiveTab, onLogoutClick }) => {
             active={activeTab === 'vault'} 
             onClick={() => setActiveTab('vault')} 
             label="Tesorería" 
+          />
+          {/* SECCIÓN CORREGIDA: Censo Real */}
+          <SidebarIcon 
+            icon={<FaUsers />} 
+            active={activeTab === 'users'} 
+            onClick={() => setActiveTab('users')} 
+            label="Censo Real" 
           />
       </nav>
       

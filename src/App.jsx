@@ -2,16 +2,16 @@ import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import Login from './pages/login'; 
 import DashboardDND from './pages/dashboard'; 
-import Inventario from './pages/Inventario'; // Importación real del inventario
+import Inventario from './pages/Inventario'; 
+import Usuarios from './pages/Usuarios'; // 1. Importación del nuevo componente
 import Sidebar from './components/Sidebar'; 
 import { AuthProvider, useAuth } from './components/AuthContext'; 
 
 function AppContent() {
-  // Utilizamos el contexto para el manejo de usuario y logout
   const { user, login, logout } = useAuth(); 
   const [activeTab, setActiveTab] = useState('map');
 
-  // Función de renderizado que combina la lógica de ambos archivos
+  // 2. Actualizamos la función de renderizado para incluir 'users'
   const renderPage = () => {
     switch (activeTab) {
       case 'map': 
@@ -23,8 +23,9 @@ function AppContent() {
           </div>
         );
       case 'vault': 
-        // Conectamos el componente de Inventario real
         return <Inventario />; 
+      case 'users': // 3. Caso para el Censo Real
+        return <Usuarios />;
       default: 
         return <DashboardDND user={user} onLogout={logout} />;
     }
@@ -40,7 +41,6 @@ function AppContent() {
           exit={{ opacity: 0, scale: 1.05, filter: "blur(15px)" }}
           transition={{ duration: 0.8 }}
         >
-          {/* Usamos el login del contexto */}
           <Login onLoginSuccess={login} />
         </motion.div>
       ) : (
@@ -51,14 +51,12 @@ function AppContent() {
           className="flex min-h-screen bg-[#1a110a] overflow-x-hidden"
           style={{ backgroundImage: `url('https://www.transparenttextures.com/patterns/dark-leather.png')` }}
         >
-          {/* SIDEBAR INDEPENDIENTE */}
           <Sidebar 
             activeTab={activeTab} 
             setActiveTab={setActiveTab} 
             onLogoutClick={logout} 
           />
 
-          {/* ÁREA DE CONTENIDO DINÁMICO con scroll independiente */}
           <div className="flex-1 h-screen overflow-y-auto custom-scrollbar">
             <AnimatePresence mode="wait">
               <motion.div
@@ -78,7 +76,6 @@ function AppContent() {
   );
 }
 
-// El componente principal que envuelve todo con el proveedor de autenticación
 export default function App() {
   return (
     <AuthProvider>
