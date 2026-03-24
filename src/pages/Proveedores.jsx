@@ -1,48 +1,80 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   GiScrollUnfurled, GiHandTruck, GiEnvelope, 
-  GiPhone, GiQuill, GiCrystalBall, GiCardExchange 
+  GiPhone, GiQuill, GiCrystalBall, GiCardExchange, GiTrashCan
 } from 'react-icons/gi';
 
 const Proveedores = () => {
   const [proveedores, setProveedores] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Estados para el Modal
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentProveedor, setCurrentProveedor] = useState({ nombre: '', telefono: '', email: '' });
+  const [isEditing, setIsEditing] = useState(false);
 
-  // --- FUNCIÓN MÍSTICA PARA TRAER LOS DATOS ---
+  const API_URL = 'https://proyectodnd.gymnast.com.mx/backend/api/get_proveedores.php';
+  const CRUD_URL = 'https://proyectodnd.gymnast.com.mx/backend/api/crud_proveedores.php';
+
   const fetchProveedores = async () => {
     try {
       setLoading(true);
-      // Reemplaza con la ruta real de tu servidor en IONOS
-      const response = await fetch('https://proyectodnd.gymnast.com.mx/backend/api/get_proveedores.php'); 
-      
-      if (!response.ok) {
-        throw new Error('El pergamino de datos no pudo ser entregado.');
-      }
-
+      const response = await fetch(API_URL); 
+      if (!response.ok) throw new Error('El pergamino de datos no pudo ser entregado.');
       const data = await response.json();
-      
-      if (data.error) {
-        throw new Error(data.error);
-      }
-
+      if (data.error) throw new Error(data.error);
       setProveedores(data);
     } catch (err) {
       setError(err.message);
-      console.error("Error en el Censo de Proveedores:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchProveedores();
-  }, []);
+  useEffect(() => { fetchProveedores(); }, []);
+
+  // --- FUNCIONES CRUD ---
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const action = isEditing ? 'update' : 'create';
+    
+    try {
+      const response = await fetch(CRUD_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, ...currentProveedor })
+      });
+      const res = await response.json();
+      if (res.success) {
+        setIsModalOpen(false);
+        setCurrentProveedor({ nombre: '', telefono: '', email: '' });
+        fetchProveedores();
+      }
+    } catch (err) { alert("Error en el ritual: " + err.message); }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("¿Seguro que deseas desterrar a este gremio?")) return;
+    try {
+      await fetch(CRUD_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'delete', id_proveedor: id })
+      });
+      fetchProveedores();
+    } catch (err) { console.error(err); }
+  };
+
+  const openModal = (prov = { nombre: '', telefono: '', email: '' }) => {
+    setCurrentProveedor(prov);
+    setIsEditing(!!prov.id_proveedor);
+    setIsModalOpen(true);
+  };
 
   return (
-    <div className="p-10 max-w-[1600px] mx-auto min-h-screen">
-      {/* Cabecera */}
+    <div className="p-10 max-w-[1600px] mx-auto min-h-screen relative">
       <header className="mb-12 border-b-2 border-[#8b5e3c]/20 pb-8 flex justify-between items-end">
         <div>
           <div className="flex items-center gap-3 mb-2 opacity-60">
@@ -60,87 +92,93 @@ const Proveedores = () => {
         <motion.button 
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
+          onClick={() => openModal()}
           className="bg-[#b45309] text-[#f3e5ab] px-8 py-4 rounded-sm shadow-xl font-bold uppercase text-xs tracking-widest border-2 border-[#f3e5ab]/20"
         >
           Inscribir Nuevo Gremio
         </motion.button>
       </header>
 
-      {/* Manejo de Estados Visuales */}
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-20">
-          <GiCrystalBall className="text-6xl text-[#8b5e3c] animate-spin mb-4" />
-          <p className="text-[#f3e5ab] font-serif italic text-xl">Consultando los registros de comercio...</p>
-        </div>
-      ) : error ? (
-        <div className="bg-red-900/20 border-2 border-red-500/50 p-6 text-red-200 font-mono text-center">
-          <p>⚠️ ERROR CRÍTICO: {error}</p>
-          <button onClick={fetchProveedores} className="mt-4 underline hover:text-white">Reintentar ritual de carga</button>
+        <div className="flex flex-col items-center justify-center py-20 uppercase tracking-widest text-[#f3e5ab]">
+          <GiCrystalBall className="text-6xl animate-spin mb-4" /> Consultando registros...
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {proveedores.length > 0 ? (
-            proveedores.map((prov) => (
-              <ProveedorCard key={prov.id_proveedor} proveedor={prov} />
-            ))
-          ) : (
-            <p className="text-[#8b5e3c] italic col-span-full text-center">No se han encontrado gremios registrados en este reino.</p>
-          )}
+          {proveedores.map((prov) => (
+            <ProveedorCard 
+              key={prov.id_proveedor} 
+              proveedor={prov} 
+              onEdit={() => openModal(prov)} 
+              onDelete={() => handleDelete(prov.id_proveedor)}
+            />
+          ))}
         </div>
       )}
-      
-      {/* Decoración de fondo */}
-      <div className="fixed bottom-10 right-10 opacity-10 pointer-events-none">
-        <GiCrystalBall className="text-[20rem] text-[#8b5e3c]" />
-      </div>
+
+      {/* --- MODAL ESTILO PERGAMINO --- */}
+      <AnimatePresence>
+        {isModalOpen && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-[#f3e5ab] p-8 border-4 border-[#8b5e3c] shadow-2xl max-w-md w-full relative overflow-hidden"
+              style={{ backgroundImage: `url('https://www.transparenttextures.com/patterns/paper.png')` }}
+            >
+              <h2 className="text-3xl font-bold text-[#2a1b0c] mb-6 border-b border-[#8b5e3c]/30 pb-2" style={{ fontFamily: "'Cinzel', serif" }}>
+                {isEditing ? 'Editar Gremio' : 'Nuevo Registro'}
+              </h2>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <input 
+                  className="w-full p-3 bg-white/50 border border-[#8b5e3c]/50 focus:outline-none focus:border-[#b45309]" 
+                  placeholder="Nombre del Gremio"
+                  value={currentProveedor.nombre}
+                  onChange={(e) => setCurrentProveedor({...currentProveedor, nombre: e.target.value})}
+                  required 
+                />
+                <input 
+                  className="w-full p-3 bg-white/50 border border-[#8b5e3c]/50 focus:outline-none focus:border-[#b45309]" 
+                  placeholder="Teléfono (Cuervo)"
+                  value={currentProveedor.telefono}
+                  onChange={(e) => setCurrentProveedor({...currentProveedor, telefono: e.target.value})}
+                />
+                <input 
+                  className="w-full p-3 bg-white/50 border border-[#8b5e3c]/50 focus:outline-none focus:border-[#b45309]" 
+                  placeholder="Email (Dirección Postal)"
+                  value={currentProveedor.email}
+                  onChange={(e) => setCurrentProveedor({...currentProveedor, email: e.target.value})}
+                />
+                <div className="flex gap-4 pt-4">
+                  <button type="submit" className="flex-1 bg-[#b45309] text-[#f3e5ab] py-3 font-bold uppercase text-xs">Sellar Pergamino</button>
+                  <button type="button" onClick={() => setIsModalOpen(false)} className="px-6 py-3 border border-[#8b5e3c] text-[#8b5e3c] font-bold uppercase text-xs">Cancelar</button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
 
-// Componente de Tarjeta (Se mantiene igual, solo asegúrate que las keys coincidan con la BD)
-const ProveedorCard = ({ proveedor }) => (
+const ProveedorCard = ({ proveedor, onEdit, onDelete }) => (
   <motion.div 
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
     whileHover={{ y: -5 }}
-    className="bg-[#f3e5ab] border-2 border-[#8b5e3c] p-1 shadow-[0_10px_20px_rgba(0,0,0,0.3)] relative overflow-hidden"
+    className="bg-[#f3e5ab] border-2 border-[#8b5e3c] p-6 shadow-lg relative group"
     style={{ backgroundImage: `url('https://www.transparenttextures.com/patterns/paper.png')` }}
   >
-    <div className="border border-[#8b5e3c]/30 p-6 h-full flex flex-col justify-between">
-      <div>
-        <div className="flex justify-between items-start mb-4">
-          <GiScrollUnfurled className="text-4xl text-[#8b5e3c]/40" />
-          <span className="text-[10px] font-bold text-[#8b5e3c] uppercase tracking-widest bg-white/30 px-2 py-1">
-            ID: {String(proveedor.id_proveedor).padStart(3, '0')}
-          </span>
-        </div>
-        
-        <h2 className="text-2xl font-bold text-[#2a1b0c] mb-6 leading-none" style={{ fontFamily: "'Cinzel', serif" }}>
-          {proveedor.nombre}
-        </h2>
-
-        <div className="space-y-3">
-          <div className="flex items-center gap-3 text-[#5d4037]">
-            <GiPhone className="text-[#b45309]" />
-            <span className="font-mono text-sm">{proveedor.telefono || 'Sin cuervo de contacto'}</span>
-          </div>
-          <div className="flex items-center gap-3 text-[#5d4037]">
-            <GiEnvelope className="text-[#b45309]" />
-            <span className="font-mono text-sm italic">{proveedor.email || 'Sin dirección postal'}</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-8 pt-4 border-t border-[#8b5e3c]/20 flex justify-end gap-4">
-        <button title="Ver Suministros" className="text-[#8b5e3c] hover:text-[#b45309] transition-colors">
-          <GiCardExchange className="text-2xl" />
-        </button>
-        <button title="Editar Pergamino" className="text-[#8b5e3c] hover:text-[#b45309] transition-colors">
-          <GiQuill className="text-2xl" />
-        </button>
+    <div className="flex justify-between items-start mb-4">
+      <GiScrollUnfurled className="text-4xl text-[#8b5e3c]/30" />
+      <div className="flex gap-2">
+        <button onClick={onEdit} className="text-[#8b5e3c] hover:text-[#b45309]"><GiQuill className="text-2xl" /></button>
+        <button onClick={onDelete} className="text-[#8b5e3c] hover:text-red-700"><GiTrashCan className="text-2xl" /></button>
       </div>
     </div>
-    <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-[#8b5e3c] rotate-45" />
+    <h2 className="text-xl font-bold text-[#2a1b0c] mb-4" style={{ fontFamily: "'Cinzel', serif" }}>{proveedor.nombre}</h2>
+    <div className="text-sm space-y-2 text-[#5d4037]">
+      <div className="flex items-center gap-2"><GiPhone className="text-[#b45309]" /> {proveedor.telefono || 'N/A'}</div>
+      <div className="flex items-center gap-2"><GiEnvelope className="text-[#b45309]" /> {proveedor.email || 'N/A'}</div>
+    </div>
   </motion.div>
 );
 
