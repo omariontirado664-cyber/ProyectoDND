@@ -2,9 +2,9 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { 
   GiDungeonGate, GiOpenBook, GiStoneTower, 
-  GiChest, GiDeathSkull 
+  GiChest, GiDeathSkull, GiHandTruck 
 } from 'react-icons/gi';
-import { FaUsers } from 'react-icons/fa'; // Importamos un icono seguro para el censo
+import { FaUsers } from 'react-icons/fa';
 
 const SidebarIcon = ({ icon, active, onClick, label }) => (
   <motion.button 
@@ -57,12 +57,18 @@ const Sidebar = ({ activeTab, setActiveTab, onLogoutClick }) => {
             onClick={() => setActiveTab('vault')} 
             label="Tesorería" 
           />
-          {/* SECCIÓN CORREGIDA: Censo Real */}
           <SidebarIcon 
             icon={<FaUsers />} 
             active={activeTab === 'users'} 
             onClick={() => setActiveTab('users')} 
             label="Censo Real" 
+          />
+          {/* NUEVA SECCIÓN: Proveedores */}
+          <SidebarIcon 
+            icon={<GiHandTruck />} 
+            active={activeTab === 'providers'} 
+            onClick={() => setActiveTab('providers')} 
+            label="Proveedores" 
           />
       </nav>
       
