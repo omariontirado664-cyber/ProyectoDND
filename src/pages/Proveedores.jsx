@@ -14,6 +14,9 @@ const Proveedores = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentProveedor, setCurrentProveedor] = useState({ nombre: '', telefono: '', email: '' });
   const [isEditing, setIsEditing] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+
 
   const API_URL = 'https://proyectodnd.gymnast.com.mx/backend/api/get_proveedores.php';
   const CRUD_URL = 'https://proyectodnd.gymnast.com.mx/backend/api/crud_proveedores.php';
@@ -33,27 +36,51 @@ const Proveedores = () => {
     }
   };
 
+
+
+
+
+
+
   useEffect(() => { fetchProveedores(); }, []);
 
   // --- FUNCIONES CRUD ---
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const action = isEditing ? 'update' : 'create';
-    
-    try {
-      const response = await fetch(CRUD_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, ...currentProveedor })
-      });
-      const res = await response.json();
-      if (res.success) {
-        setIsModalOpen(false);
-        setCurrentProveedor({ nombre: '', telefono: '', email: '' });
-        fetchProveedores();
-      }
-    } catch (err) { alert("Error en el ritual: " + err.message); }
-  };
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  const action = isEditing ? 'update' : 'create';
+  
+  if (isSubmitting) return; 
+  setIsSubmitting(true); 
+
+  try {
+    const response = await fetch(CRUD_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, ...currentProveedor })
+    });
+
+    // 1. Convertimos la respuesta a JSON (independientemente de si fue error o éxito)
+    const res = await response.json();
+
+    // 2. Si la respuesta no fue "ok" (el Trigger falló), lanzamos el error manualmente
+    if (!response.ok) {
+      throw new Error(res.error || "Falla en el sello místico");
+    }
+
+    // 3. Si todo salió bien
+    if (res.success) {
+      alert("¡Gremio registrado en el Censo!"); // Un pequeño mensaje de éxito no cae mal
+      setIsModalOpen(false);
+      setCurrentProveedor({ nombre: '', telefono: '', email: '' });
+      fetchProveedores();
+    }
+  } catch (err) { 
+    // Aquí es donde aparecerá: "Error en el ritual: Error: El número de teléfono..."
+    alert("Error en el ritual: " + err.message); 
+  } finally {
+    setIsSubmitting(false); 
+  }
+};
 
   const handleDelete = async (id) => {
     if (!window.confirm("¿Seguro que deseas desterrar a este gremio?")) return;
@@ -72,6 +99,10 @@ const Proveedores = () => {
     setIsEditing(!!prov.id_proveedor);
     setIsModalOpen(true);
   };
+
+
+
+
 
   return (
     <div className="p-10 max-w-[1600px] mx-auto min-h-screen relative">
@@ -149,7 +180,7 @@ const Proveedores = () => {
                   onChange={(e) => setCurrentProveedor({...currentProveedor, email: e.target.value})}
                 />
                 <div className="flex gap-4 pt-4">
-                  <button type="submit" className="flex-1 bg-[#b45309] text-[#f3e5ab] py-3 font-bold uppercase text-xs">Sellar Pergamino</button>
+                  <button type="submit" disabled={isSubmitting} className="flex-1 bg-[#b45309] text-[#f3e5ab] py-3 font-bold uppercase text-xs">{isSubmitting ? 'Inscribiendo...' : 'Sellar Pergamino'}</button>
                   <button type="button" onClick={() => setIsModalOpen(false)} className="px-6 py-3 border border-[#8b5e3c] text-[#8b5e3c] font-bold uppercase text-xs">Cancelar</button>
                 </div>
               </form>
