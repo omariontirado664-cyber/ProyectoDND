@@ -8,8 +8,7 @@ import {
   GiWizardStaff, GiNinjaHead, GiAxeSwing, GiWoodenSign
 } from 'react-icons/gi';
 
-// --- RECIBIMOS onLoaded DESDE APP.JSX ---
-const DndArchitectDashboard = ({ user, onLoaded }) => {
+const DndArchitectDashboard = ({ user }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [showToast, setShowToast] = useState(false); 
   const [time, setTime] = useState(new Date());
@@ -18,6 +17,7 @@ const DndArchitectDashboard = ({ user, onLoaded }) => {
   const [activeTableId, setActiveTableId] = useState(null);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
 
+  // --- ESTADO TÁCTICO DE TABLAS Y AVENTUREROS ---
   const [tables, setTables] = useState([
     {
       id: 1,
@@ -33,21 +33,32 @@ const DndArchitectDashboard = ({ user, onLoaded }) => {
     ] : [] }))
   ]);
 
+  const handleRegisterPayment = (playerId) => {
+    setTables(prevTables => prevTables.map(table => {
+      if (table.id === activeTableId) {
+        return {
+          ...table,
+          players: table.players.map(player => {
+            if (player.id === playerId) return { ...player, coverPaid: true };
+            return player;
+          })
+        };
+      }
+      return table;
+    }));
+    setSelectedPlayer(prev => ({ ...prev, coverPaid: true }));
+  };
+
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 60000);
-    
-    // --- LÓGICA DE CARGA SINCRONIZADA ---
     const loadTimer = setTimeout(() => {
         setIsLoading(false);
-        // NOTIFICAMOS A APP.JSX QUE EL MAPA ESTÁ LISTO
-        if (onLoaded) onLoaded(); 
-        
         setTimeout(() => setShowToast(true), 400);
     }, 1500);
     
     const welcomeTimer = setTimeout(() => setShowToast(false), 5500); 
     return () => { clearInterval(timer); clearTimeout(loadTimer); clearTimeout(welcomeTimer); };
-  }, [onLoaded]);
+  }, []);
 
   if (isLoading) return <GrimoireLoader />;
 
@@ -110,7 +121,6 @@ const DndArchitectDashboard = ({ user, onLoaded }) => {
         </div>
       </header>
 
-      {/* RESTO DEL COMPONENTE (Stats, TacticalPlate, LogEntries, etc.) */}
       <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8 mb-12">
           <StatWidget label="Arca de Oro" value="34,209" unit="GP" icon={<GiCoins />} color="#b45309" />
           <StatWidget label="Héroes Activos" value="12" unit="Almas" icon={<GiShield />} color="#b45309" />
@@ -120,16 +130,26 @@ const DndArchitectDashboard = ({ user, onLoaded }) => {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
         <div className="lg:col-span-8 relative group">
-          <div className="relative bg-[#f3e5ab] border-2 border-[#8b5e3c] p-2 rounded-sm shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
+          <div className="relative bg-[#f3e5ab] border-2 border-[#8b5e3c] p-2 rounded-sm shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden"
                style={{ backgroundImage: `url('https://www.transparenttextures.com/patterns/paper.png')` }}>
              <div className="p-10 relative z-10 border border-[#8b5e3c]/20 shadow-inner overflow-hidden">
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-10">
+                  <div className="flex justify-between items-center mb-10 border-b border-[#8b5e3c]/20 pb-6">
+                      <h3 className="text-[#2a1b0c] font-bold uppercase tracking-[0.4em] text-xs" style={{ fontFamily: "'Cinzel', serif" }}>Ocupación de Tabernas y Nodos</h3>
+                      <GiRadarSweep className="text-3xl text-[#b45309]/40" />
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-10 relative z-10">
                     {tables.map((table) => (
                       <TacticalPlate 
-                        key={table.id} id={table.id} isOccupied={table.isOccupied} 
+                        key={table.id} 
+                        id={table.id} 
+                        isOccupied={table.isOccupied} 
                         onClick={() => {
-                          if (table.isOccupied) { setActiveTableId(table.id); setShowOrdersModal(true); } 
-                          else { setSelectedNode({ id: table.id, occupied: false }); }
+                          if (table.isOccupied) {
+                            setActiveTableId(table.id);
+                            setShowOrdersModal(true);
+                          } else {
+                            setSelectedNode({ id: table.id, occupied: false });
+                          }
                         }}
                       />
                     ))}
@@ -137,28 +157,37 @@ const DndArchitectDashboard = ({ user, onLoaded }) => {
              </div>
           </div>
         </div>
-        
-        <div className="lg:col-span-4 flex flex-col">
-            <div className="bg-[#f3e5ab] border-2 border-[#8b5e3c] p-10 shadow-2xl flex-1 flex flex-col relative"
-                 style={{ backgroundImage: `url('https://www.transparenttextures.com/patterns/paper.png')` }}>
-                <h3 className="text-[#2a1b0c] font-black uppercase text-[11px] tracking-[0.5em] mb-6">Anales de Transacciones</h3>
-                <div className="space-y-4 overflow-y-auto max-h-[450px]">
-                    <LogEntry title="Mazo 'Luz Sagrada'" price="+2,400 GP" icon={<GiSparkles />} />
-                    <LogEntry title="Inscripción Torneo" price="+150 GP" icon={<GiDiceTwentyFacesTwenty />} />
-                    <LogEntry title="Pociones" price="-320 GP" icon={<GiBeerStein />} />
-                </div>
+
+        <div className="lg:col-span-4 flex flex-col group">
+          <div className="bg-[#f3e5ab] border-2 border-[#8b5e3c] p-10 shadow-2xl flex-1 flex flex-col relative overflow-hidden"
+               style={{ backgroundImage: `url('https://www.transparenttextures.com/patterns/paper.png')`, clipPath: 'polygon(0 0, 100% 0, 100% 92%, 92% 100%, 0 100%)' }}>
+            <div className="flex items-center justify-between mb-10 border-b border-[#8b5e3c]/20 pb-6 opacity-80 group-hover:opacity-100 transition-opacity">
+              <div>
+                  <h3 className="text-[#2a1b0c] font-black uppercase text-[11px] tracking-[0.5em]" style={{ fontFamily: "'Cinzel', serif" }}>Anales de Transacciones</h3>
+                  <p className="text-[9px] text-[#8b5e3c] uppercase font-bold mt-1 tracking-widest">Registros Escritos a Mano</p>
+              </div>
+              <GiQuill className="text-3xl text-[#8b5e3c]/60 group-hover:text-[#b45309] transition-colors" />
             </div>
+            <div className="flex-1 space-y-4 overflow-y-auto pr-3 custom-scrollbar max-h-[450px] font-medium text-[#4a3a2a] italic">
+              <LogEntry title="Mazo 'Luz Sagrada'" price="+2,400 GP" icon={<GiSparkles />} />
+              <LogEntry title="Inscripción Torneo Local" price="+150 GP" icon={<GiDiceTwentyFacesTwenty />} />
+              <LogEntry title="Pociones de Sanación" price="-320 GP" icon={<GiBeerStein />} />
+              <LogEntry title="Set Dados Ópalo" price="+850 GP" icon={<GiDiceTwentyFacesTwenty />} />
+            </div>
+          </div>
         </div>
       </div>
 
+      {/* MODALES TÁCTICOS */}
       <NodeDetailModal node={selectedNode} onClose={() => setSelectedNode(null)} />
       <OrdersModal isOpen={showOrdersModal} table={activeTableData} onClose={() => setShowOrdersModal(false)} onSelectPlayer={(p) => setSelectedPlayer(p)} />
-      <PlayerDetailModal player={selectedPlayer} onClose={() => setSelectedPlayer(null)} onPay={(id) => console.log("Pago:", id)} />
+      <PlayerDetailModal player={selectedPlayer} onClose={() => setSelectedPlayer(null)} onPay={handleRegisterPayment} />
     </div>
   );
 };
 
-// --- MANTENER COMPONENTES ATÓMICOS (StatWidget, TacticalPlate, GrimoireLoader, etc.) ---
+/* --- COMPONENTES ATÓMICOS --- */
+
 const StatWidget = ({ label, value, unit, icon, color, isAlert }) => (
     <div className="relative p-6 bg-[#f3e5ab] border-2 border-[#8b5e3c] rounded-sm shadow-xl overflow-hidden group hover:border-[#b45309] transition-colors"
          style={{ backgroundImage: `url('https://www.transparenttextures.com/patterns/paper.png')` }}>
@@ -201,23 +230,6 @@ const LogEntry = ({ title, price, icon }) => (
   </div>
 );
 
-const NodeDetailModal = ({ node, onClose }) => (
-  <AnimatePresence>
-    {node && (
-      <div className="fixed inset-0 z-[600] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="absolute inset-0" />
-        <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }}
-          className="relative bg-[#f3e5ab] w-full max-w-md p-8 border-2 border-[#8b5e3c] text-center" style={{ backgroundImage: `url('https://www.transparenttextures.com/patterns/paper.png')` }}>
-              <GiWoodenSign className="text-6xl text-[#8b5e3c] mx-auto mb-4" />
-              <h2 className="text-3xl font-black text-[#2a1b0c] uppercase">Nodo {node.id.toString().padStart(2, '0')}</h2>
-              <p className="text-sm text-[#5d4037] italic mb-10">Este cuadrante está libre de aventureros.</p>
-              <button onClick={onClose} className="w-full py-4 bg-[#2a1b0c] text-[#f3e5ab] font-bold uppercase text-xs">Cerrar Pergamino</button>
-        </motion.div>
-      </div>
-    )}
-  </AnimatePresence>
-);
-
 const OrdersModal = ({ isOpen, table, onClose, onSelectPlayer }) => (
   <AnimatePresence>
     {isOpen && table && (
@@ -236,6 +248,7 @@ const OrdersModal = ({ isOpen, table, onClose, onSelectPlayer }) => (
                     <div className="text-3xl text-[#8b5e3c]">{player.icon}</div>
                     <div className="flex flex-col text-left">
                       <span className="text-lg font-bold text-[#2a1b0c]" style={{ fontFamily: "'Cinzel', serif" }}>{player.name}</span>
+                      <span className={`text-[9px] uppercase font-black ${player.coverPaid ? 'text-green-700' : 'text-red-700'}`}>{player.coverPaid ? '✓ Pagado' : '✗ Pendiente'}</span>
                     </div>
                   </div>
                   <div className="text-right">
@@ -270,9 +283,26 @@ const PlayerDetailModal = ({ player, onClose, onPay }) => (
                 <div className="border-t-2 border-[#8b5e3c]/20 pt-4 flex justify-between items-center"><span className="text-lg font-black uppercase">Total</span><span className="text-3xl font-black">{player.total} GP</span></div>
             </div>
             <div className="flex gap-4">
-                <button onClick={() => onPay(player.id)} className="flex-1 py-4 font-black uppercase text-[10px] bg-[#b45309] text-white">Sellar Pago</button>
+                <button onClick={() => onPay(player.id)} className={`flex-1 py-4 font-black uppercase text-[10px] transition-all ${player.coverPaid ? 'bg-green-800 text-white' : 'bg-[#b45309] text-white'}`}>{player.coverPaid ? '✓ Pago Registrado' : 'Sellar Pago'}</button>
                 <button onClick={onClose} className="px-6 py-4 border-2 border-[#8b5e3c] text-[#8b5e3c]"><GiDungeonGate className="text-xl" /></button>
             </div>
+        </motion.div>
+      </div>
+    )}
+  </AnimatePresence>
+);
+
+const NodeDetailModal = ({ node, onClose }) => (
+  <AnimatePresence>
+    {node && (
+      <div className="fixed inset-0 z-[600] flex items-center justify-center p-6 bg-black/40 backdrop-blur-md">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="absolute inset-0" />
+        <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }}
+          className="relative bg-[#f3e5ab] w-full max-w-md p-8 border-2 border-[#8b5e3c] text-center" style={{ backgroundImage: `url('https://www.transparenttextures.com/patterns/paper.png')` }}>
+              <GiWoodenSign className="text-6xl text-[#8b5e3c] mx-auto mb-4" />
+              <h2 className="text-3xl font-black text-[#2a1b0c] uppercase">Nodo {node.id.toString().padStart(2, '0')}</h2>
+              <p className="text-sm text-[#5d4037] italic mb-10">Este cuadrante está libre de aventureros.</p>
+              <button onClick={onClose} className="w-full py-4 bg-[#2a1b0c] text-[#f3e5ab] font-bold uppercase text-xs">Cerrar Pergamino</button>
         </motion.div>
       </div>
     )}
