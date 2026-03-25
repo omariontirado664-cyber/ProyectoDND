@@ -12,7 +12,7 @@ const Usuarios = () => {
   const [activeTab, setActiveTab] = useState('empleados');
 
   // URL de tu API en MariaDB
-  const API_URL = 'http://proyectodnd.gymnast.com.mx/backend/api/get_usuarios.php';
+  const API_URL = 'https://proyectodnd.gymnast.com.mx/backend/api/get_usuarios.php';
 
   const fetchUsuarios = () => {
     setLoading(true);

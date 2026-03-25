@@ -21,8 +21,8 @@ const PuntoDeVenta = () => {
   const [paginaActual, setPaginaActual] = useState(1);
   const productosPorPagina = 8; // Ajustable según el tamaño de pantalla
 
-  const GET_URL = 'http://proyectodnd.gymnast.com.mx/backend/api/get_productos.php';
-  const VENTA_URL = 'http://proyectodnd.gymnast.com.mx/backend/api/registrar_venta.php';
+  const GET_URL = 'https://proyectodnd.gymnast.com.mx/backend/api/get_productos.php';
+  const VENTA_URL = 'https://proyectodnd.gymnast.com.mx/backend/api/registrar_venta.php';
 
   const fetchProductos = async () => {
     setLoading(true);

@@ -28,8 +28,8 @@ const Inventario = () => {
   const [showModal, setShowModal] = useState(false);
   const [selectedProd, setSelectedProd] = useState(null);
 
-  const API_URL = 'http://proyectodnd.gymnast.com.mx/backend/api/get_productos.php';
-  const CRUD_URL = 'http://proyectodnd.gymnast.com.mx/backend/api/crud_productos.php';
+  const API_URL = 'https://proyectodnd.gymnast.com.mx/backend/api/get_productos.php';
+  const CRUD_URL = 'https://proyectodnd.gymnast.com.mx/backend/api/crud_productos.php';
 
   // --- FUNCIÓN DE NORMALIZACIÓN (IGNORA ACENTOS) ---
   const normalizar = (texto) => {
